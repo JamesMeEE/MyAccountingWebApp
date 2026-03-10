@@ -2,12 +2,15 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
-<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/JamesMeEE/Pic/refs/heads/main/icon%E0%B9%81%E0%B8%AD%E0%B8%9E%E0%B8%A3%E0%B8%B1%E0%B8%9A%E0%B8%88%E0%B9%88%E0%B8%B2%E0%B8%A2.png">
 <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/JamesMeEE/Pic/refs/heads/main/icon%E0%B9%81%E0%B8%AD%E0%B8%9E%E0%B8%A3%E0%B8%B1%E0%B8%9A%E0%B8%88%E0%B9%88%E0%B8%B2%E0%B8%A2.png">
-<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/JamesMeEE/Pic/refs/heads/main/icon%E0%B9%81%E0%B8%AD%E0%B8%9E%E0%B8%A3%E0%B8%B1%E0%B8%9A%E0%B8%88%E0%B9%88%E0%B8%B2%E0%B8%A2.png">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="จดรายจ่าย">
+<link rel="manifest" href='manifest.json'>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
@@ -20,7 +23,6 @@
 --safe-top:env(safe-area-inset-top,20px);
 --safe-bottom:env(safe-area-inset-bottom,20px);
 }
-html{background:#0a0a0a;}
 html,body{
 height:100%;width:100%;overflow:hidden;
 background:var(--bg);color:var(--text);
@@ -267,7 +269,7 @@ transform:translateY(-120%);transition:transform .4s cubic-bezier(0.32,0.72,0,1)
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-@media(min-width:600px){
+@media(min-width:500px){
 .app{max-width:430px;margin:0 auto;border-left:1px solid #1a1a1a;border-right:1px solid #1a1a1a;}
 .modal{max-width:430px;}
 }
@@ -299,7 +301,7 @@ span.flatpickr-weekday{color:var(--text2)!important;font-weight:600!important;}
 <span class="month-label" id="monthLabel"></span>
 </div>
 
-<div class="view" id="homeView" style="display:none;">
+<div class="view" id="homeView">
 <div class="scroll-area">
 
 <div class="summary-card">
@@ -362,7 +364,7 @@ Sheet
 </div>
 </div>
 
-<div class="view active" id="addView" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+<div class="view active" id="addView">
 <div class="scroll-area" style="padding:20px;">
 <h2 style="font-size:18px;font-weight:600;margin-bottom:20px;">เพิ่มรายการ</h2>
 
@@ -424,37 +426,26 @@ Sheet
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 var SHEET_URL = "https://script.google.com/macros/s/AKfycbwRhfnL0JZGC09EALSJcssZO5fY6FcsPvNdgG4nUFwbzEC1jHGkwJ5pQfB-z8gr4RGibw/exec";
 
-async function apiGet(action, params) {
+function gasGet(action, params) {
   var url = SHEET_URL + '?action=' + action;
   for (var k in params) url += '&' + k + '=' + encodeURIComponent(params[k]);
-  try {
-    var res = await fetch(url);
-    return await res.json();
-  } catch(e) {
-    showToast('เชื่อมต่อไม่ได้', 'error');
-    return null;
-  }
+  return fetch(url).then(function(r) { return r.json(); });
 }
 
-async function apiPost(action, data) {
-  try {
-    await fetch(SHEET_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: {'Content-Type': 'text/plain'},
-      body: JSON.stringify({action: action, data: data})
-    });
-    return true;
-  } catch(e) {
-    showToast('บันทึกไม่ได้', 'error');
-    return false;
-  }
+function gasPost(action, data) {
+  return fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'text/plain'},
+    body: JSON.stringify({action: action, data: data})
+  });
 }
-
+</script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
 var CATEGORIES = [
   {id:'อาหาร',emoji:'🍜',color:'#ff6b6b'},
   {id:'ขนม',emoji:'🍰',color:'#c77dba'},
@@ -557,37 +548,38 @@ function loadSummary() {
   showSpinner('incomeVal');
   showSpinner('balanceVal');
 
-  apiGet('getSummary', {period: currentPeriod, year: currentYear, month: currentMonth}).then(function(result) {
-    if (result) {
+  gasGet('getSummary', {period: currentPeriod, year: currentYear, month: currentMonth})
+    .then(function(result) {
       document.getElementById('expenseVal').textContent = '-฿' + formatNum(result.totalExpense);
       document.getElementById('incomeVal').textContent = '+฿' + formatNum(result.totalIncome);
       document.getElementById('balanceVal').textContent = formatNum(result.balance);
-    } else {
+    })
+    .catch(function() {
       document.getElementById('expenseVal').textContent = '-';
       document.getElementById('incomeVal').textContent = '-';
       document.getElementById('balanceVal').textContent = '-';
-    }
-  });
+      showToast('โหลดข้อมูลไม่ได้', 'error');
+    });
 }
 
 function loadCreditTotal() {
   showSpinner('creditVal');
 
-  apiGet('getCreditCardTotal', {creditPeriod: currentCreditPeriod}).then(function(total) {
-    if (total !== null) {
+  gasGet('getCreditCardTotal', {creditPeriod: currentCreditPeriod})
+    .then(function(total) {
       document.getElementById('creditVal').textContent = '฿' + formatNum(total);
-    } else {
+    })
+    .catch(function() {
       document.getElementById('creditVal').textContent = '-';
-    }
-  });
+    });
 }
 
 function loadCategoryChart() {
   var container = document.getElementById('chartBars');
   container.innerHTML = '<div style="text-align:center;padding:20px;"><span class="inline-spinner"></span></div>';
 
-  apiGet('getExpenseByCategory', {period: currentPeriod, year: currentYear, month: currentMonth}).then(function(catTotals) {
-    if (!catTotals) { container.innerHTML = '<div class="empty-state"><p>โหลดไม่ได้</p></div>'; return; }
+  gasGet('getExpenseByCategory', {period: currentPeriod, year: currentYear, month: currentMonth})
+    .then(function(catTotals) {
       var entries = [];
       for (var k in catTotals) {
         entries.push([k, catTotals[k]]);
@@ -614,6 +606,9 @@ function loadCategoryChart() {
           '</div>' +
         '</div>';
       }).join('');
+    })
+    .catch(function() {
+      container.innerHTML = '<div class="empty-state"><p>โหลดไม่ได้</p></div>';
     });
 }
 
@@ -685,15 +680,15 @@ function submitForm() {
       note: note
     };
 
-    apiPost('saveExpense', data).then(function() {
-      btn.disabled = false;
-      btn.textContent = 'บันทึก';
-      showToast('บันทึกรายจ่ายแล้ว ✓', 'success');
-      resetForm();
-      loadSummary();
-      loadCreditTotal();
-      loadCategoryChart();
-    });
+    gasPost('saveExpense', data).then(function() {
+        btn.disabled = false;
+        btn.textContent = 'บันทึก';
+        showToast('บันทึกรายจ่ายแล้ว ✓', 'success');
+        resetForm();
+        loadSummary();
+        loadCreditTotal();
+        loadCategoryChart();
+      });
   } else {
     var data = {
       date: dateVal,
@@ -702,13 +697,13 @@ function submitForm() {
       note: note
     };
 
-    apiPost('saveIncome', data).then(function() {
-      btn.disabled = false;
-      btn.textContent = 'บันทึก';
-      showToast('บันทึกรายรับแล้ว ✓', 'success');
-      resetForm();
-      loadSummary();
-    });
+    gasPost('saveIncome', data).then(function() {
+        btn.disabled = false;
+        btn.textContent = 'บันทึก';
+        showToast('บันทึกรายรับแล้ว ✓', 'success');
+        resetForm();
+        loadSummary();
+      });
   }
 }
 
@@ -731,19 +726,14 @@ function resetForm() {
 
 function switchView(view) {
   currentView = view;
-  document.querySelectorAll('.view').forEach(function(v) {
-    v.classList.remove('active');
-    v.style.display = 'none';
-  });
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
 
   if (view === 'home') {
     document.getElementById('homeView').classList.add('active');
-    document.getElementById('homeView').style.display = 'flex';
     document.getElementById('fabBtn').style.display = 'flex';
   } else if (view === 'add') {
     document.getElementById('addView').classList.add('active');
-    document.getElementById('addView').style.display = 'flex';
     document.getElementById('fabBtn').style.display = 'none';
   }
 
