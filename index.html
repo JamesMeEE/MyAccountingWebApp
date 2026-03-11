@@ -401,6 +401,18 @@ Sheet
 <label class="form-label">รายละเอียด</label>
 <input class="form-input" id="inputDetail" type="text" placeholder="เช่น เงินเดือน มี.ค.">
 </div>
+<div class="form-group" id="taxGroup" style="display:none;">
+<label class="form-label">หักภาษี 3%</label>
+<div style="display:flex;align-items:center;gap:12px;">
+<span style="font-size:13px;color:var(--text2);">ไม่โดน</span>
+<label style="position:relative;width:48px;height:28px;flex-shrink:0;cursor:pointer;">
+<input type="checkbox" id="taxToggle" style="opacity:0;width:0;height:0;">
+<span style="position:absolute;inset:0;background:var(--surface3);border-radius:14px;transition:all .3s;"></span>
+<span style="position:absolute;top:3px;left:3px;width:22px;height:22px;background:var(--text2);border-radius:50%;transition:all .3s;" id="taxKnob"></span>
+</label>
+<span style="font-size:13px;color:var(--text2);" id="taxLabel">โดน</span>
+</div>
+</div>
 <div class="form-group">
 <label class="form-label">Note</label>
 <textarea class="form-textarea" id="inputNote" placeholder="บันทึกเพิ่มเติม (ไม่จำเป็น)"></textarea>
@@ -643,6 +655,7 @@ function setType(type) {
   document.getElementById('catGroup').style.display = type === 'expense' ? 'block' : 'none';
   document.getElementById('payGroup').style.display = type === 'expense' ? 'block' : 'none';
   document.getElementById('detailGroup').style.display = type === 'income' ? 'block' : 'none';
+  document.getElementById('taxGroup').style.display = type === 'income' ? 'block' : 'none';
 
   checkSubmit();
 }
@@ -694,7 +707,8 @@ function submitForm() {
       date: dateVal,
       detail: document.getElementById('inputDetail').value.trim(),
       amount: amount,
-      note: note
+      note: note,
+      tax3: document.getElementById('taxToggle').checked ? 'โดน' : ''
     };
 
     gasPost('saveIncome', data).then(function() {
@@ -712,6 +726,8 @@ function resetForm() {
   document.getElementById('inputItem').value = '';
   document.getElementById('inputDetail').value = '';
   document.getElementById('inputNote').value = '';
+  document.getElementById('taxToggle').checked = false;
+  updateTaxToggleUI();
   selectedCat = 'อาหาร';
   selectedPayment = 'เงินสด';
   renderCats();
@@ -747,10 +763,26 @@ function showToast(msg, type) {
   setTimeout(function() { t.className = 'toast'; }, 2500);
 }
 
+function updateTaxToggleUI() {
+  var on = document.getElementById('taxToggle').checked;
+  var knob = document.getElementById('taxKnob');
+  var track = knob.previousElementSibling;
+  if (on) {
+    track.style.background = 'var(--accent)';
+    knob.style.left = '23px';
+    knob.style.background = '#fff';
+  } else {
+    track.style.background = 'var(--surface3)';
+    knob.style.left = '3px';
+    knob.style.background = 'var(--text2)';
+  }
+}
+
 function setupEvents() {
   document.getElementById('inputAmount').addEventListener('input', checkSubmit);
   document.getElementById('inputItem').addEventListener('input', checkSubmit);
   document.getElementById('inputDetail').addEventListener('input', checkSubmit);
+  document.getElementById('taxToggle').addEventListener('change', updateTaxToggleUI);
 
   document.querySelectorAll('.nav-item').forEach(function(item) {
     item.addEventListener('click', function() {
